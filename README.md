@@ -1,1 +1,1 @@
-# Aboneh-gads-2020-projects
+# Aboneh's GADS2020 Project Submissions
