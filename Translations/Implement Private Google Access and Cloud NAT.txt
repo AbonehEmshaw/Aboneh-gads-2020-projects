@@ -1,0 +1,92 @@
+
+# LAB: Implement Private Google Access and Cloud NAT
+
+## OBJECTIVES:
+	
+	- Configure a VM instance that doesn't have an external IP address
+	- Connect to a VM instance using an Identity-Aware Proxy (IAP) tunnel
+	- Enable Private Google Access on a subnet
+	- Configure a Cloud NAT gateway
+	- Verify access to public IP addresses of Google APIs and services and other connections to the internet
+
+## STEPS: 
+
+	1. Create the VM instance
+	
+		- Create a VPC network
+		
+			gcloud compute networks create privatenet --subnet-mode=custom --bgp-routing-mode=regional
+
+			gcloud compute networks subnets create privatenet --range=10.130.0.0/20 --network=privatenet --region=us-central1
+			
+		- Create firewall rules
+		
+			gcloud compute firewall-rules create privatenet-allow-ssh --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW 
+			--rules=tcp:22 --source-ranges=35.235.240.0/20
+			
+		- Create the VM instance with no public IP address
+
+			gcloud beta compute instances create vm-internal --zone=us-central1-c --machine-type=n1-standard-1 
+			--subnet=privatenet-us --no-address --maintenance-policy=MIGRATE --service-account=578377443268-compute@developer.gserviceaccount.com 
+			--scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append 
+			--image=debian-9-stretch-v20200902 --image-project=debian-cloud --boot-disk-size=10GB 
+			--boot-disk-type=pd-standard --boot-disk-device-name=vm-internal --reservation-affinity=any
+		- SSH to vm-internal to test the IAP tunnel
+			
+			gcloud compute ssh vm-internal --zone us-central1-c --tunnel-through-iap
+				* Y then ENTER
+				
+			- test the external connectivity of vm-internal
+				
+				ping -c 2 www.google.com
+				
+			- To return to your Cloud Shell instance
+				
+				exit
+				
+	2. Enable Private Google Access
+		
+		- Create a Cloud Storage bucket
+		
+			
+		- Copy an image file into your bucket
+		
+			gsutil cp gs://cloud-training/gcpnet/private/access.svg gs://abrita
+			gsutil cp gs://abrita/*.svg .
+			
+			- connect to vm-internal
+				
+				gcloud compute ssh vm-internal --zone us-central1-c --tunnel-through-iap
+				
+			- copy the image to vm-internal
+			
+				gsutil cp gs://abrita/*.svg .
+				
+		- Enable Private Google Access
+		
+			
+	3. Configure a Cloud NAT gateway
+		
+		- update the VM instances
+			
+			sudo apt-get update
+			
+			- connect to vm-internal
+		
+				gcloud compute ssh vm-internal --zone us-central1-c --tunnel-through-iap
+
+			- re-synchronize the package index of vm-internal
+		
+				sudo apt-get update
+				
+		- Configure a Cloud NAT gateway
+		
+			gcloud compute routers nats create 	nat-config -- VPC network=	privatenet --Region=us-central1 --router=nat-router
+		
+		- Verify the Cloud NAT gateway
+		
+			sudo apt-get update
+			
+			exit
+	
+		
